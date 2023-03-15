@@ -138,62 +138,65 @@
 ------------------------------------------------------*/
 
    const form = document.getElementById('contactForm')
-   const url = 'https://7h1pm3j8j8.execute-api.us-east-1.amazonaws.com/dev/email/send'
-   const imageLoader = document.getElementById('image-loader')
-   const submit = document.getElementById('submit')
+   const url = 'https://4ez8stxbd6.execute-api.us-east-1.amazonaws.com/prod/email'
    const errorMessage = document.getElementById('message-warning')
    const successMessage = document.getElementById('message-success')
-
-   function post(url, body, callback) {
-   var req = new XMLHttpRequest();
-   req.open("POST", url, true);
-   req.setRequestHeader("Content-Type", "application/json");
-   req.addEventListener("load", function () {
-      if (req.status < 400) {
-         callback(null, JSON.parse(req.responseText));
-      } else {
-         callback(new Error("Request failed: " + req.statusText));
-      }
-   });
-   req.send(JSON.stringify(body));
-   }
+   var name = $('#contactForm #contactName').val();
+   var email = $('#contactForm #contactEmail').val();
+   var subject = $('#contactForm #contactSubject').val();
+   var content = $('#contactForm #contactMessage').val();
 
    function success () {
-      imageLoader.fadeOut()
-      errorMessage.hidden()
-      successMessage.fadeIn()
+      $('#image-loader').fadeOut();
+      $('#message-warning').hide();
+      $('#contactForm').fadeOut();
+      $('#message-success').fadeIn();   
 
-      submit.disabled = false
-      submit.blur()
-      form.contactName.focus()
-      form.contactName.value = ''
-      form.contactEmail.value = ''
-      form.contactSubject.value = ''
-      form.contactMessage.value = ''
    }
 
    function error (err) {
-      imageLoader.fadeOut()
-      errorMessage.innerHTML(err)
-      errorMessage.fadeIn()
-      submit.disabled = false
+      $('#image-loader').fadeOut();
+      $('#message-warning').html('Form missing data');
+      $('#message-warning').fadeIn();
       console.log(err)
    }
 
-   form.click(function () {
-      imageLoader.fadeIn()
-      submit.disabled = true  
-
-      const payload = {
-         name: form.contactName.value,
-         email: form.contactEmail.value,
-         subject: form.contactSubject.value,
-         content: form.contactMessage.value
-      }
-      post(url, payload, function (err, res) {
-         if (err) { return error(err) }
-         success()
+   function sendData(e) {
+      e.preventDefault()
+      fetch(url, {
+         headers:{
+            "Content-type": "application/json"
+         },
+         method: "POST",
+         body: JSON.stringify({
+            name: form.contactName.value,
+            email: form.contactEmail.value,
+            subject: form.contactSubject.value,
+            content: form.contactMessage.value
+         }),
+         mode: 'cors'
       })
+      .then((resp) => resp.json())
+      .then(function(data) {
+         // console.log("data")
+         // console.log(data)
+         // console.log(typeof data)
+
+         console.log(data)
+         if (typeof data === 'object') {
+            success()
+         } else {
+            error(data)
+         }
+      })
+      .catch(function(err) {
+         error(err)
+      });
+   };
+
+   document.getElementById('submit').addEventListener('click', function(e) {
+      $('#image-loader').fadeIn();
+      sendData(e);
    });
 
- });
+});
